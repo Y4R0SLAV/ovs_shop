@@ -28,7 +28,7 @@ class ProductController {
     let sale = -1
 
     if (have_sale) { sale = 0 }
-    term = '%' + term + '%'
+    term = term ? '%' + term + '%' : ""
 
     let products
     // всё вроде работает но ещё один фильтр невозможно будет вставить
@@ -123,7 +123,6 @@ class ProductController {
           }
         } else {
           if (term) {
-            console.log(111111111)
             products = await db.query(
               'SELECT * FROM product WHERE title LIKE $1 AND sale_price > $2',
               [term, sale])
