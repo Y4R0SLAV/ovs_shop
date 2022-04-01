@@ -27,13 +27,15 @@ class ProductController {
     let whereArray = []
     let sale = -1
 
-    if (have_sale) { sale = 0 }
+    if (have_sale == "true") { sale = 0 }
+
     term = term ? '%' + term + '%' : ""
 
     let products
     // всё вроде работает но ещё один фильтр невозможно будет вставить
     // в конце запросов прибавляю sorted_by потому что беру его из енв
     // никакие дроп табле туда не могут попасть
+    console.log(sale)
     if (sorted_by) {
       if (collection_id) {
         if (subtype_id) {
