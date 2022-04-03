@@ -24,120 +24,45 @@ class ProductController {
     let { subtype_id, collection_id, have_sale, term, sorted } = req.query
 
     let sorted_by = sortedByString(sorted)
-    let whereArray = []
     let sale = -1
+    let needAnd = false
 
     if (have_sale == "true") { sale = 0 }
-
     term = term ? '%' + term + '%' : ""
 
-    let products
-    // всё вроде работает но ещё один фильтр невозможно будет вставить
-    // в конце запросов прибавляю sorted_by потому что беру его из енв
-    // никакие дроп табле туда не могут попасть
-    console.log(sale)
-    if (sorted_by) {
-      if (collection_id) {
-        if (subtype_id) {
-          if (term) {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_collection_id = $1 AND fk_subtype_id = $2 AND title LIKE %$3% AND sale_price > $4 ORDER BY ' + sorted_by,
-              [collection_id, subtype_id, term, sale])
-          }
-          else {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_collection_id = $1 AND fk_subtype_id = $2 AND sale_price > $3 ORDER BY ' + sorted_by,
-              [collection_id, subtype_id, sale])
-          }
-        } else {
-          if (term) {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_collection_id = $1 AND title LIKE %$3% AND sale_price > $3 ORDER BY ' + sorted_by,
-              [collection_id, term, sale])
-          }
-          else {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_collection_id = $1 AND sale_price > $2 ORDER BY ' + sorted_by,
-              [collection_id, sale])
-          }
-        }
-      } else {
-        if (subtype_id) {
-          if (term) {
-            products = await db.query(
-              'SELECT * FROM product WHERE AND fk_subtype_id = $1 AND title LIKE %$2% AND sale_price > $3 ORDER BY ' + sorted_by,
-              [subtype_id, term, sale])
-          }
-          else {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_subtype_id = $1 AND sale_price > $2 ORDER BY ' + sorted_by,
-              [subtype_id, sale])
-          }
-        } else {
-          if (term) {
-            products = await db.query(
-              'SELECT * FROM product WHERE title LIKE %$1% AND sale_price > $2 ORDER BY ' + sorted_by,
-              [term, sale])
-          }
-          else {
-            products = await db.query(
-              'SELECT product_id, price, title, fk_collection_id, fk_subtype_id, description, sale_price, sizing, xxs, xs, s, m, l, xl, xxl FROM product WHERE sale_price > $1 ORDER BY ' + sorted_by,
-              [sale])
-          }
-        }
+    let query = 'SELECT * FROM product WHERE'
+
+    if (subtype_id > 0) {
+      query += ' fk_subtype_id = ' + subtype_id
+      needAnd = true
+    }
+
+    if (collection_id > 0) {
+      if (needAnd) {
+        query += ' AND fk_collection_id = ' + collection_id
       }
-    } else {
-      if (collection_id) {
-        if (subtype_id) {
-          if (term) {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_collection_id = $1 AND fk_subtype_id = $2 AND title LIKE %$3% AND sale_price > $4',
-              [collection_id, subtype_id, term, sale])
-          }
-          else {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_collection_id = $1 AND fk_subtype_id = $2 AND sale_price > $3 ',
-              [collection_id, subtype_id, sale])
-          }
-        } else {
-          if (term) {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_collection_id = $1 AND title LIKE %$3% AND sale_price > $3',
-              [collection_id, term, sale])
-          }
-          else {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_collection_id = $1 AND sale_price > $2',
-              [collection_id, sale])
-          }
-        }
-      } else {
-        if (subtype_id) {
-          if (term) {
-            products = await db.query(
-              'SELECT * FROM product WHERE AND fk_subtype_id = $1 AND title LIKE %$2% AND sale_price > $3',
-              [subtype_id, term, sale])
-          }
-          else {
-            products = await db.query(
-              'SELECT * FROM product WHERE fk_subtype_id = $1 AND sale_price > $2',
-              [subtype_id, sale])
-          }
-        } else {
-          if (term) {
-            products = await db.query(
-              'SELECT * FROM product WHERE title LIKE $1 AND sale_price > $2',
-              [term, sale])
-          }
-          else {
-            products = await db.query(
-              'SELECT * FROM product WHERE sale_price > $1',
-              [sale])
-          }
-        }
+      else {
+        query += ' fk_collection_id = ' + collection_id
+        needAnd = true
       }
     }
 
+    if (term !== "") {
+      if (needAnd) {
+        query += ' AND title LIKE ' + '%' + term + '%'
+      } else {
+        query += ' title LIKE ' + '%' + term + '%'
+        needAnd = true
+      }
+    }
+
+    needAnd ? query += ' AND sale_price > ' + sale : query += ' sale_price > ' + sale
+    sorted_by ? query += ' ORDER BY ' + sorted_by : query += ''
+
+    console.log(query)
+    console.log(sorted_by)
+    
+    const products = await db.query(query)
     res.json(products.rows)
   }
 
