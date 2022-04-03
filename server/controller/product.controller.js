@@ -30,7 +30,10 @@ class ProductController {
     if (have_sale == "true") { sale = 0 }
     term = term ? '%' + term + '%' : ""
 
-    let query = 'SELECT * FROM product WHERE'
+    let query = `SELECT product_id as id, title, price, sale_price as sale, 
+    (SELECT url FROM photo WHERE fk_product_id = product_id AND is_front = true) as front, 
+    (SELECT url FROM photo WHERE fk_product_id = product_id AND is_back = true) as back
+    FROM product LEFT JOIN photo ON product.product_id = photo.fk_product_id WHERE`
 
     if (subtype_id > 0) {
       query += ' fk_subtype_id = ' + subtype_id
@@ -47,6 +50,7 @@ class ProductController {
       }
     }
 
+    // на терме валидация, тут могут быть только буквы без {}%$ и тд
     if (term !== "") {
       if (needAnd) {
         query += ' AND title LIKE ' + '%' + term + '%'
@@ -58,19 +62,33 @@ class ProductController {
 
     needAnd ? query += ' AND sale_price > ' + sale : query += ' sale_price > ' + sale
     sorted_by ? query += ' ORDER BY ' + sorted_by : query += ''
+    query += ' GROUP BY id'
 
-    console.log(query)
-    console.log(sorted_by)
-    
     const products = await db.query(query)
     res.json(products.rows)
   }
 
   async getOneProduct(req, res) {
     const id = req.params.id
-    const product = await db.query('SELECT * FROM product WHERE product_id = $1', [id])
+    const product = await db.query(`
+    SELECT product_id as id, price, title, fk_collection_id as collection_id,
+      fk_subtype_id as subtype_id, description, sale_price, sizing, xxs, xs, s, m, l, xl, xxl,
+      (SELECT url FROM photo WHERE fk_product_id = product_id AND is_front = true) as front, 
+      (SELECT url FROM photo WHERE fk_product_id = product_id AND is_back = true) as back
+  
+    FROM product JOIN photo ON product.product_id = photo.fk_product_id
+    WHERE product_id = $1;`, [id]).then(res => res.rows[0])
 
-    res.json(product.rows[0])
+    const photos = await db.query(`SELECT url FROM photo WHERE fk_product_id = $1 
+    AND is_front = false AND is_back = false;`, [id])
+    let newPhotos = []
+
+    for (let i = 0; i < photos.rows.length; i++) {
+      newPhotos.push(photos.rows[i].url)
+    }
+
+    res.json({ ...product, photos: [...newPhotos] })
+
   }
 
   async updateProduct(req, res) {
