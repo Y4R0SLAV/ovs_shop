@@ -3,14 +3,13 @@ const db = require('../db')
 
 class ProductController {
   async createProduct(req, res, next) {
-    const { title, price, collection_id, subtype_id, description, sale_price, sizing, XXS, XS, S, M, L, XL, XXL } = req.body
+    const { title, price, collection_id, subtype_id, description, sale_price, sizing, xxs, xs, s, m, l, xl, xxl } = req.body
 
     let newProduct
-
-    if (sizing) {
+    if (sizing === true) {
       newProduct = await db.query(
         'INSERT INTO product (title, price, fk_collection_id, fk_subtype_id, description, sale_price, sizing, XXS, XS, S, M, L, XL, XXL) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *',
-        [title, price, collection_id, subtype_id, description, sale_price, sizing, XXS, XS, S, M, L, XL, XXL])
+        [title, price, collection_id, subtype_id, description, sale_price, sizing, xxs, xs, s, m, l, xl, xxl])
     } else {
       newProduct = await db.query(
         'INSERT INTO product (title, price, fk_collection_id, fk_subtype_id, description, sale_price, sizing) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
@@ -92,13 +91,13 @@ class ProductController {
   }
 
   async updateProduct(req, res) {
-    const { id, title, price, collection_id, subtype_id, description, sale_price, sizing, XXS, XS, S, M, L, XL, XXL } = req.body
+    const { id, title, price, collection_id, subtype_id, description, sale_price, sizing, xxs, xs, s, m, l, xl, xxl } = req.body
     let newProduct
 
     if (sizing) {
       newProduct = await db.query(
         'UPDATE product set title = $1, price = $2, fk_collection_id = $3, fk_subtype_id = $4, description = $5, sale_price = $6, sizing = $7, XXS = $8, XS = $9, S = $10, M = $11, L = $12, XL = $13, XXL = $14 WHERE product_id = $15 RETURNING *',
-        [title, price, collection_id, subtype_id, description, sale_price, sizing, XXS, XS, S, M, L, XL, XXL, id])
+        [title, price, collection_id, subtype_id, description, sale_price, sizing, xxs, xs, s, m, l, xl, xxl, id])
     } else {
       newProduct = await db.query(
         'UPDATE product set title = $1, price = $2, fk_collection_id = $3, fk_subtype_id = $4, description = $5, sale_price = $6, sizing = $7 WHERE product_id = $8 RETURNING *',
