@@ -70,12 +70,15 @@ class ProductController {
   async getOneProduct(req, res) {
     const id = req.params.id
     const product = await db.query(`
-    SELECT product_id as id, price, title, fk_collection_id as collection_id,
-      fk_subtype_id as subtype_id, description, sale_price, sizing, xxs, xs, s, m, l, xl, xxl,
+    SELECT product_id as id, price, product.title as title, fk_collection_id as collection_id,
+      fk_subtype_id as subtype_id, subtype.title as subtype_title, 
+      fk_type_id as type_id, type.title as type_title,
+      description, sale_price, sizing, xxs, xs, s, m, l, xl, xxl,
       (SELECT url FROM photo WHERE fk_product_id = product_id AND is_front = true) as front, 
       (SELECT url FROM photo WHERE fk_product_id = product_id AND is_back = true) as back
-  
     FROM product JOIN photo ON product.product_id = photo.fk_product_id
+        JOIN subtype ON product.fk_subtype_id = subtype.subtype_id
+				JOIN type ON type.type_id = fk_type_id
     WHERE product_id = $1;`, [id]).then(res => res.rows[0])
 
     const photos = await db.query(`SELECT url FROM photo WHERE fk_product_id = $1 
