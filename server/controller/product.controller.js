@@ -93,6 +93,28 @@ class ProductController {
 
   }
 
+  async getRecommendedProducts(req, res) {
+    const collection_id = req.params.collection_id
+    const subtype_id = req.params.subtype_id
+    const numOfRec = 6
+
+    const products = await db.query(`
+    (SELECT product_id as id, price, title, sale_price, url
+      FROM product LEFT JOIN photo ON (product.product_id = photo.fk_product_id)
+      WHERE is_front = true AND (fk_collection_id = $1 OR fk_subtype_id = $2)
+      LIMIT $3)
+      UNION ALL
+      (SELECT product_id as id, price, title, sale_price, url 
+      FROM product LEFT JOIN photo ON (product.product_id = photo.fk_product_id)
+      WHERE is_front = true AND product_id NOT IN (SELECT product_id as id FROM product WHERE fk_collection_id = $1 OR fk_subtype_id = $2
+      LIMIT $3 )
+      LIMIT (SELECT $3 - COUNT(product_id) as count FROM product WHERE fk_collection_id = $1 OR fk_subtype_id = $2
+      LIMIT $3 ))`, [collection_id, subtype_id, numOfRec]).then(res => res.rows)
+
+    res.json(products)
+  }
+
+
   async updateProduct(req, res) {
     const { id, title, price, collection_id, subtype_id, description, sale_price, sizing, xxs, xs, s, m, l, xl, xxl } = req.body
     let newProduct
