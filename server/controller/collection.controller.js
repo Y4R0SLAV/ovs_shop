@@ -9,7 +9,7 @@ class CollectionController {
   }
 
   async getCollections(req, res) {
-    const collections = await db.query(`SELECT collection_id as id, title, picture, header, 'collections/' || collection_id as url FROM collection`)
+    const collections = await db.query(`SELECT collection_id as id, title, picture, header, '/collections/' || collection_id as url FROM collection`)
 
     res.json(collections.rows)
   }
